@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Watertown SD Chamber Members - Fundraising Tracker</title>
+    <title>Watertown SD Chamber Members - Team Fundraising Tracker</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -27,6 +27,41 @@
             text-align: center;
             color: #666;
             margin-bottom: 20px;
+        }
+        .setup-section {
+            background-color: #fff3cd;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ffc107;
+        }
+        .setup-section.connected {
+            background-color: #d4edda;
+            border-left-color: #28a745;
+        }
+        .setup-steps {
+            margin: 15px 0;
+        }
+        .setup-steps ol {
+            margin-left: 20px;
+        }
+        .setup-steps li {
+            margin: 8px 0;
+        }
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #dc3545;
+        }
+        .status-indicator.connected {
+            background-color: #28a745;
         }
         .stats {
             text-align: center;
@@ -99,8 +134,16 @@
             background-color: #28a745;
             color: white;
         }
+        .btn-warning {
+            background-color: #ffc107;
+            color: black;
+        }
         .btn:hover {
             opacity: 0.9;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         table {
             width: 100%;
@@ -158,55 +201,26 @@
         .status-maybe { background-color: #fff3cd !important; }
         .status-callback { background-color: #cce7ff !important; }
         
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-        }
-        .modal-content {
-            background-color: white;
-            margin: 10% auto;
+        .loading {
+            text-align: center;
             padding: 20px;
-            border-radius: 8px;
-            width: 80%;
-            max-width: 500px;
+            color: #666;
         }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .close {
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        .export-section {
-            background-color: #e8f4fd;
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
             padding: 15px;
             border-radius: 5px;
-            margin-top: 20px;
-            border-left: 4px solid #2196F3;
+            margin: 10px 0;
+            border-left: 4px solid #dc3545;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #28a745;
         }
         .progress-bar {
             background-color: #e9ecef;
@@ -220,7 +234,6 @@
             border-radius: 4px;
             transition: width 0.3s ease;
         }
-        .hidden { display: none; }
         
         @media (max-width: 768px) {
             .controls {
@@ -242,541 +255,496 @@
 <body>
     <div class="container">
         <h1>Watertown SD Area Chamber of Commerce</h1>
-        <div class="subtitle">Member Business Fundraising Tracker</div>
+        <div class="subtitle">Team Fundraising Tracker - Google Sheets Integration</div>
         
-        <div class="stats" id="statsDisplay">
-            <div class="stat-item">
-                <div><strong id="totalBusinesses">30</strong></div>
-                <div>Total Businesses</div>
-            </div>
-            <div class="stat-item">
-                <div><strong id="contactedCount">0</strong></div>
-                <div>Contacted</div>
-            </div>
-            <div class="stat-item">
-                <div><strong id="supportingCount">0</strong></div>
-                <div>Will Support</div>
-            </div>
-            <div class="stat-item">
-                <div><strong id="pendingCount">0</strong></div>
-                <div>Pending/Follow-up</div>
-            </div>
-        </div>
-
-        <div class="controls">
-            <div class="control-group">
-                <div class="filter-control">
-                    <label>Filter by Category:</label>
-                    <select id="categoryFilter">
-                        <option value="">All Categories</option>
-                        <option value="Automotive">Automotive</option>
-                        <option value="Banking">Banking & Finance</option>
-                        <option value="Construction">Construction & Remodeling</option>
-                        <option value="Education">Education</option>
-                        <option value="Health">Health Services</option>
-                        <option value="Manufacturing">Manufacturing</option>
-                        <option value="Professional">Professional Services</option>
-                        <option value="Restaurants">Restaurants & Food</option>
-                        <option value="Retail">Retail & Shopping</option>
-                    </select>
-                </div>
-                <div class="filter-control">
-                    <label>Filter by Status:</label>
-                    <select id="statusFilter">
-                        <option value="">All Statuses</option>
-                        <option value="yes">Will Support</option>
-                        <option value="no">Declined</option>
-                        <option value="maybe">Considering</option>
-                        <option value="callback">Needs Follow-up</option>
-                        <option value="">Not Contacted</option>
-                    </select>
-                </div>
-                <div class="filter-control">
-                    <label>Search Businesses:</label>
-                    <input type="text" id="searchBox" placeholder="Type business name...">
-                </div>
+        <!-- Setup Section -->
+        <div class="setup-section" id="setupSection">
+            <h3>🔧 Google Sheets Setup Required</h3>
+            <div class="connection-status">
+                <div class="status-indicator" id="statusIndicator"></div>
+                <span id="statusText">Not Connected</span>
             </div>
             
-            <div class="action-buttons">
-                <button class="btn btn-success" onclick="addNewBusiness()">+ Add Business</button>
-                <button class="btn btn-secondary" onclick="exportData()">Export Data</button>
-                <button class="btn btn-primary" onclick="importData()">Import Data</button>
+            <div class="setup-steps">
+                <strong>Simplified Setup (3 minutes):</strong>
+                <ol>
+                    <li>Click "Initialize with Sample Data" below to get started immediately</li>
+                    <li>A CSV file will download automatically</li>
+                    <li>Open <a href="https://docs.google.com/spreadsheets/create" target="_blank">Google Sheets</a> and create a new spreadsheet</li>
+                    <li>Upload the CSV: File → Import → Upload → Select the downloaded file</li>
+                    <li>Share your sheet: "Anyone with the link can edit"</li>
+                    <li>Paste the Google Sheets URL below and click "Connect"</li>
+                </ol>
+                <p><strong>Team Workflow:</strong> Use Export/Import buttons to sync data between team members and Google Sheets.</p>
+            </div>
+            
+            <div style="margin: 15px 0;">
+                <input type="text" id="sheetsUrl" placeholder="Paste your Google Sheets URL here..." style="width: 70%; margin-right: 10px;">
+                <button class="btn btn-primary" onclick="connectToSheets()">Connect</button>
+            </div>
+            
+            <div style="margin-top: 15px;">
+                <button class="btn btn-warning" onclick="initializeWithSampleData()" id="sampleDataBtn">Initialize with Sample Data</button>
+                <span style="margin-left: 10px; font-size: 0.9em; color: #666;">This will add the 34 Watertown businesses to your sheet</span>
             </div>
         </div>
-
-        <div class="progress-section">
-            <strong>Progress Overview:</strong>
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        
+        <!-- Main App (Hidden until connected) -->
+        <div id="mainApp" style="display: none;">
+            <div class="stats" id="statsDisplay">
+                <div class="stat-item">
+                    <div><strong id="totalBusinesses">0</strong></div>
+                    <div>Total Businesses</div>
+                </div>
+                <div class="stat-item">
+                    <div><strong id="contactedCount">0</strong></div>
+                    <div>Contacted</div>
+                </div>
+                <div class="stat-item">
+                    <div><strong id="supportingCount">0</strong></div>
+                    <div>Will Support</div>
+                </div>
+                <div class="stat-item">
+                    <div><strong id="pendingCount">0</strong></div>
+                    <div>Pending/Follow-up</div>
+                </div>
             </div>
-            <div style="text-align: center; font-size: 0.9em; color: #666;" id="progressText">0% contacted</div>
-        </div>
 
-        <table id="businessTable">
-            <thead>
-                <tr>
-                    <th style="width: 25%;">Business Name</th>
-                    <th style="width: 25%;">Contact Information</th>
-                    <th style="width: 15%;">Your Team Contact</th>
-                    <th style="width: 15%;">Contact Person at Business</th>
-                    <th style="width: 15%;">Support Our Fundraise?</th>
-                    <th style="width: 5%;">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="businessTableBody">
-                <!-- Data will be loaded here by JavaScript -->
-            </tbody>
-        </table>
-
-        <div class="export-section">
-            <strong>💾 Data Storage:</strong> Your data is automatically saved in your browser and will persist between sessions. 
-            Use the Export button to download a backup CSV file, and Import to restore from a backup.
-        </div>
-    </div>
-
-    <!-- Add Business Modal -->
-    <div id="addBusinessModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Add New Business</h3>
-                <span class="close" onclick="closeModal()">&times;</span>
+            <div class="controls">
+                <div class="control-group">
+                    <div class="filter-control">
+                        <label>Filter by Category:</label>
+                        <select id="categoryFilter">
+                            <option value="">All Categories</option>
+                            <option value="Automotive">Automotive</option>
+                            <option value="Banking">Banking & Finance</option>
+                            <option value="Construction">Construction & Remodeling</option>
+                            <option value="Education">Education</option>
+                            <option value="Health">Health Services</option>
+                            <option value="Manufacturing">Manufacturing</option>
+                            <option value="Professional">Professional Services</option>
+                            <option value="Restaurants">Restaurants & Food</option>
+                            <option value="Retail">Retail & Shopping</option>
+                        </select>
+                    </div>
+                    <div class="filter-control">
+                        <label>Filter by Status:</label>
+                        <select id="statusFilter">
+                            <option value="">All Statuses</option>
+                            <option value="yes">Will Support</option>
+                            <option value="no">Declined</option>
+                            <option value="maybe">Considering</option>
+                            <option value="callback">Needs Follow-up</option>
+                            <option value="">Not Contacted</option>
+                        </select>
+                    </div>
+                    <div class="filter-control">
+                        <label>Search Businesses:</label>
+                        <input type="text" id="searchBox" placeholder="Type business name...">
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-success" onclick="refreshData()" id="refreshBtn">🔄 Refresh</button>
+                    <button class="btn btn-primary" onclick="exportToCSV()" id="exportBtn">📤 Export to CSV</button>
+                    <button class="btn btn-secondary" onclick="importFromCSV()" id="importBtn">📥 Import from CSV</button>
+                    <button class="btn btn-secondary" onclick="openGoogleSheet()" id="openSheetBtn">📊 Open Sheet</button>
+                </div>
             </div>
-            <form id="addBusinessForm">
-                <div class="form-group">
-                    <label>Business Name:</label>
-                    <input type="text" id="newBusinessName" required>
+
+            <div class="progress-section">
+                <strong>Team Progress:</strong>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
                 </div>
-                <div class="form-group">
-                    <label>Category:</label>
-                    <select id="newBusinessCategory">
-                        <option value="Professional">Professional Services</option>
-                        <option value="Retail">Retail & Shopping</option>
-                        <option value="Restaurants">Restaurants & Food</option>
-                        <option value="Health">Health Services</option>
-                        <option value="Banking">Banking & Finance</option>
-                        <option value="Automotive">Automotive</option>
-                        <option value="Construction">Construction & Remodeling</option>
-                        <option value="Manufacturing">Manufacturing</option>
-                        <option value="Education">Education</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Address:</label>
-                    <input type="text" id="newBusinessAddress">
-                </div>
-                <div class="form-group">
-                    <label>Phone:</label>
-                    <input type="text" id="newBusinessPhone">
-                </div>
-                <div class="form-group">
-                    <label>Website:</label>
-                    <input type="text" id="newBusinessWebsite">
-                </div>
-                <div style="text-align: right; margin-top: 20px;">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-success">Add Business</button>
-                </div>
-            </form>
+                <div style="text-align: center; font-size: 0.9em; color: #666;" id="progressText">0% contacted</div>
+            </div>
+
+            <div id="loadingIndicator" class="loading" style="display: none;">
+                Loading data from Google Sheets...
+            </div>
+
+            <table id="businessTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th style="width: 25%;">Business Name</th>
+                        <th style="width: 25%;">Contact Information</th>
+                        <th style="width: 15%;">Your Team Contact</th>
+                        <th style="width: 15%;">Contact Person at Business</th>
+                        <th style="width: 20%;">Support Our Fundraise?</th>
+                    </tr>
+                </thead>
+                <tbody id="businessTableBody">
+                    <!-- Data will be loaded here -->
+                </tbody>
+            </table>
         </div>
+
+        <!-- Messages -->
+        <div id="messages"></div>
     </div>
 
     <script>
-        // Initial business data
-        let businessData = [
-            {
-                id: 1,
-                name: "1st Financial Bank USA",
-                category: "Banking",
-                address: "500 4th St NE, Watertown, SD 57201",
-                phone: "(605) 882-8800",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 2,
-                name: "Ace Hardware",
-                category: "Retail",
-                address: "1220 9th Ave SE, Watertown, SD 57201",
-                phone: "(605) 886-3577",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 3,
-                name: "Advantage Ford",
-                category: "Automotive",
-                address: "3520 9th Ave SE, Watertown, SD 57201",
-                phone: "(605) 886-3596",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 4,
-                name: "Avera Medical Group",
-                category: "Health",
-                address: "901 4th St NE, Watertown, SD 57201",
-                phone: "(605) 882-7000",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 5,
-                name: "BankWest",
-                category: "Banking",
-                address: "22 1st Ave NE, Watertown, SD 57201",
-                phone: "(605) 886-5911",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 6,
-                name: "Bomber's Bar & Grill",
-                category: "Restaurants",
-                address: "1414 9th Ave SE, Watertown, SD 57201",
-                phone: "(605) 753-8921",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 7,
-                name: "Butler Machinery",
-                category: "Manufacturing",
-                address: "2000 43rd St SE, Watertown, SD 57201",
-                phone: "(605) 882-2230",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 8,
-                name: "Dacotah Bank",
-                category: "Banking",
-                address: "15 1st Ave NE, Watertown, SD 57201",
-                phone: "(605) 882-8600",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 9,
-                name: "Dempsey's Brewery",
-                category: "Restaurants",
-                address: "122 1st Ave NE, Watertown, SD 57201",
-                phone: "(605) 753-2415",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 10,
-                name: "Eide Bailly LLP",
-                category: "Professional",
-                address: "201 1st Ave NE Ste 2, Watertown, SD 57201",
-                phone: "(605) 882-5201",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 11,
-                name: "Fastenal Company",
-                category: "Manufacturing",
-                address: "820 33rd St SE, Watertown, SD 57201",
-                phone: "(605) 882-2999",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 12,
-                name: "First Bank & Trust",
-                category: "Banking",
-                address: "1101 29th St SE, Watertown, SD 57201",
-                phone: "(605) 882-4200",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 13,
-                name: "Glacial Lakes Energy",
-                category: "Manufacturing",
-                address: "1501 8th St NE, Watertown, SD 57201",
-                phone: "(605) 882-8480",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 14,
-                name: "Hy-Vee",
-                category: "Retail",
-                address: "3620 9th Ave SE, Watertown, SD 57201",
-                phone: "(605) 882-6200",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 15,
-                name: "Interstates",
-                category: "Professional",
-                address: "1414 4th St NE, Watertown, SD 57201",
-                phone: "(605) 882-2000",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 16,
-                name: "L. Marquardt Electric Inc",
-                category: "Construction",
-                address: "1424 7th Ave SW, Watertown, SD 57201",
-                phone: "(605) 886-2107",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 17,
-                name: "Lake Area Technical College",
-                category: "Education",
-                address: "1201 Arrow Ave, Watertown, SD 57201",
-                phone: "(605) 882-5284",
-                website: "www.lakeareatech.edu",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 18,
-                name: "Lake Area Veterinary Clinic",
-                category: "Health",
-                address: "601 10th St SW, Watertown, SD 57201",
-                phone: "(605) 886-5002",
-                website: "www.lakeareavetclinic.com",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 19,
-                name: "Larry's Lumber Inc",
-                category: "Construction",
-                address: "183 N Maple, Watertown, SD 57201",
-                phone: "(605) 886-5800",
-                website: "larryslumber.com",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 20,
-                name: "Lewis Family Drug",
-                category: "Health",
-                address: "911 11th St SE Ste 100, Watertown, SD 57201",
-                phone: "(605) 878-3072",
-                website: "lewisdrug.com",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 21,
-                name: "Les Schwab Tire",
-                category: "Automotive",
-                address: "828 23rd St SE, Watertown, SD 57201",
-                phone: "(605) 657-1241",
-                website: "lesschwab.com",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 22,
-                name: "Lea's Hallmark",
-                category: "Retail",
-                address: "1300 9th Ave SE, Watertown, SD 57201",
-                phone: "(605) 753-0426",
-                website: "www.hallmark.com",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 23,
-                name: "Lakeside Pain Center",
-                category: "Health",
-                address: "1512 4th Street NE, Watertown, SD 57201",
-                phone: "(605) 884-0100",
-                website: "lakesidepain.com",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 24,
-                name: "LiftGator",
-                category: "Manufacturing",
-                address: "501 Oakwood Road, Watertown, SD 57201",
-                phone: "(605) 753-0919",
-                website: "liftgator.com",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 25,
-                name: "Menards",
-                category: "Retail",
-                address: "4000 9th Ave SE, Watertown, SD 57201",
-                phone: "(605) 882-9600",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 26,
-                name: "Pizza Ranch",
-                category: "Restaurants",
-                address: "1510 9th Ave SE, Watertown, SD 57201",
-                phone: "(605) 882-3681",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 27,
-                name: "Plains Commerce Bank",
-                category: "Banking",
-                address: "1420 9th Ave SE, Watertown, SD 57201",
-                phone: "(605) 882-1600",
-                website: "plainscommerce.com",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 28,
-                name: "Rising Star Hydraulics",
-                category: "Manufacturing",
-                address: "3501 Industrial Dr, Watertown, SD 57201",
-                phone: "(605) 882-7766",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 29,
-                name: "State Farm Insurance",
-                category: "Professional",
-                address: "201 1st Ave NE, Watertown, SD 57201",
-                phone: "(605) 886-8989",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 30,
-                name: "Terex Utilities",
-                category: "Manufacturing",
-                address: "909 6th St NE, Watertown, SD 57201",
-                phone: "(605) 882-4000",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 31,
-                name: "Tri-State Nursing",
-                category: "Health",
-                address: "1414 4th St NE Ste 7, Watertown, SD 57201",
-                phone: "(605) 882-3640",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 32,
-                name: "Walmart Supercenter",
-                category: "Retail",
-                address: "1901 9th Ave SE, Watertown, SD 57201",
-                phone: "(605) 882-9100",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 33,
-                name: "Watertown Regional Medical Center",
-                category: "Health",
-                address: "901 4th St NE, Watertown, SD 57201",
-                phone: "(605) 882-7000",
-                website: "watertownregional.com",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            },
-            {
-                id: 34,
-                name: "Woods Fuller Shultz & Smith PC",
-                category: "Professional",
-                address: "122 1st Ave NE, Watertown, SD 57201",
-                phone: "(605) 886-8726",
-                website: "",
-                teamContact: "",
-                businessContact: "",
-                status: ""
-            }
+        // Global variables
+        let businessData = [];
+        let sheetsId = '';
+        let sheetsUrl = '';
+        let isConnected = false;
+        let updateTimeout = null;
+        
+        // Team members list
+        const teamMembers = ["Holli", "Sarah", "Stacy", "Beth", "Heidi", "Renae"];
+
+        // Sample business data
+        const sampleBusinesses = [
+            { name: "1st Financial Bank USA", category: "Banking", address: "500 4th St NE, Watertown, SD 57201", phone: "(605) 882-8800", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "Ace Hardware", category: "Retail", address: "1220 9th Ave SE, Watertown, SD 57201", phone: "(605) 886-3577", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "Advantage Ford", category: "Automotive", address: "3520 9th Ave SE, Watertown, SD 57201", phone: "(605) 886-3596", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "Avera Medical Group", category: "Health", address: "901 4th St NE, Watertown, SD 57201", phone: "(605) 882-7000", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "BankWest", category: "Banking", address: "22 1st Ave NE, Watertown, SD 57201", phone: "(605) 886-5911", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "Bomber's Bar & Grill", category: "Restaurants", address: "1414 9th Ave SE, Watertown, SD 57201", phone: "(605) 753-8921", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "Butler Machinery", category: "Manufacturing", address: "2000 43rd St SE, Watertown, SD 57201", phone: "(605) 882-2230", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "Dacotah Bank", category: "Banking", address: "15 1st Ave NE, Watertown, SD 57201", phone: "(605) 882-8600", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "Dempsey's Brewery", category: "Restaurants", address: "122 1st Ave NE, Watertown, SD 57201", phone: "(605) 753-2415", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "Eide Bailly LLP", category: "Professional", address: "201 1st Ave NE Ste 2, Watertown, SD 57201", phone: "(605) 882-5201", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "Fastenal Company", category: "Manufacturing", address: "820 33rd St SE, Watertown, SD 57201", phone: "(605) 882-2999", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "First Bank & Trust", category: "Banking", address: "1101 29th St SE, Watertown, SD 57201", phone: "(605) 882-4200", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "Glacial Lakes Energy", category: "Manufacturing", address: "1501 8th St NE, Watertown, SD 57201", phone: "(605) 882-8480", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "Hy-Vee", category: "Retail", address: "3620 9th Ave SE, Watertown, SD 57201", phone: "(605) 882-6200", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "Interstates", category: "Professional", address: "1414 4th St NE, Watertown, SD 57201", phone: "(605) 882-2000", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "L. Marquardt Electric Inc", category: "Construction", address: "1424 7th Ave SW, Watertown, SD 57201", phone: "(605) 886-2107", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "Lake Area Technical College", category: "Education", address: "1201 Arrow Ave, Watertown, SD 57201", phone: "(605) 882-5284", website: "www.lakeareatech.edu", teamContact: "", businessContact: "", status: "" },
+            { name: "Lake Area Veterinary Clinic", category: "Health", address: "601 10th St SW, Watertown, SD 57201", phone: "(605) 886-5002", website: "www.lakeareavetclinic.com", teamContact: "", businessContact: "", status: "" },
+            { name: "Larry's Lumber Inc", category: "Construction", address: "183 N Maple, Watertown, SD 57201", phone: "(605) 886-5800", website: "larryslumber.com", teamContact: "", businessContact: "", status: "" },
+            { name: "Lewis Family Drug", category: "Health", address: "911 11th St SE Ste 100, Watertown, SD 57201", phone: "(605) 878-3072", website: "lewisdrug.com", teamContact: "", businessContact: "", status: "" },
+            { name: "Les Schwab Tire", category: "Automotive", address: "828 23rd St SE, Watertown, SD 57201", phone: "(605) 657-1241", website: "lesschwab.com", teamContact: "", businessContact: "", status: "" },
+            { name: "Lea's Hallmark", category: "Retail", address: "1300 9th Ave SE, Watertown, SD 57201", phone: "(605) 753-0426", website: "www.hallmark.com", teamContact: "", businessContact: "", status: "" },
+            { name: "Lakeside Pain Center", category: "Health", address: "1512 4th Street NE, Watertown, SD 57201", phone: "(605) 884-0100", website: "lakesidepain.com", teamContact: "", businessContact: "", status: "" },
+            { name: "LiftGator", category: "Manufacturing", address: "501 Oakwood Road, Watertown, SD 57201", phone: "(605) 753-0919", website: "liftgator.com", teamContact: "", businessContact: "", status: "" },
+            { name: "Menards", category: "Retail", address: "4000 9th Ave SE, Watertown, SD 57201", phone: "(605) 882-9600", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "Pizza Ranch", category: "Restaurants", address: "1510 9th Ave SE, Watertown, SD 57201", phone: "(605) 882-3681", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "Plains Commerce Bank", category: "Banking", address: "1420 9th Ave SE, Watertown, SD 57201", phone: "(605) 882-1600", website: "plainscommerce.com", teamContact: "", businessContact: "", status: "" },
+            { name: "Rising Star Hydraulics", category: "Manufacturing", address: "3501 Industrial Dr, Watertown, SD 57201", phone: "(605) 882-7766", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "State Farm Insurance", category: "Professional", address: "201 1st Ave NE, Watertown, SD 57201", phone: "(605) 886-8989", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "Terex Utilities", category: "Manufacturing", address: "909 6th St NE, Watertown, SD 57201", phone: "(605) 882-4000", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "Tri-State Nursing", category: "Health", address: "1414 4th St NE Ste 7, Watertown, SD 57201", phone: "(605) 882-3640", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "Walmart Supercenter", category: "Retail", address: "1901 9th Ave SE, Watertown, SD 57201", phone: "(605) 882-9100", website: "", teamContact: "", businessContact: "", status: "" },
+            { name: "Watertown Regional Medical Center", category: "Health", address: "901 4th St NE, Watertown, SD 57201", phone: "(605) 882-7000", website: "watertownregional.com", teamContact: "", businessContact: "", status: "" },
+            { name: "Woods Fuller Shultz & Smith PC", category: "Professional", address: "122 1st Ave NE, Watertown, SD 57201", phone: "(605) 886-8726", website: "", teamContact: "", businessContact: "", status: "" }
         ];
 
-        // Team members list - you can modify this
-        const teamMembers = ["John", "Sarah", "Mike", "Lisa", "Alex", "Emma"];
+        // Extract Google Sheets ID from URL
+        function extractSheetsId(url) {
+            const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+            return match ? match[1] : null;
+        }
 
-        // Load data from storage or use default
-        function loadData() {
-            const stored = JSON.parse(sessionStorage.getItem('chamberBusinessData') || 'null');
-            if (stored) {
-                businessData = stored;
+        // Connect to Google Sheets
+        function connectToSheets() {
+            const url = document.getElementById('sheetsUrl').value.trim();
+            if (!url) {
+                showMessage('Please enter a Google Sheets URL', 'error');
+                return;
+            }
+
+            const id = extractSheetsId(url);
+            if (!id) {
+                showMessage('Invalid Google Sheets URL. Please check the format.', 'error');
+                return;
+            }
+
+            sheetsId = id;
+            sheetsUrl = url;
+            
+            // Save connection info
+            localStorage.setItem('chamberSheetsId', sheetsId);
+            localStorage.setItem('chamberSheetsUrl', sheetsUrl);
+            
+            // Test connection by loading data
+            loadDataFromSheets();
+        }
+
+        // Load data from Google Sheets
+        async function loadDataFromSheets() {
+            if (!sheetsId) return;
+            
+            showLoading(true);
+            
+            try {
+                // Use a CORS proxy to access Google Sheets
+                const csvUrl = `https://cors-anywhere.herokuapp.com/https://docs.google.com/spreadsheets/d/${sheetsId}/export?format=csv`;
+                
+                // Alternative: Try direct access first, then fall back to manual instructions
+                let response;
+                try {
+                    response = await fetch(`https://docs.google.com/spreadsheets/d/${sheetsId}/export?format=csv`);
+                } catch (corsError) {
+                    // CORS blocked - provide manual instructions
+                    showManualSyncInstructions();
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch data from Google Sheets. Make sure the sheet is shared with "Anyone with the link can view".');
+                }
+                
+                const csvText = await response.text();
+                const rows = csvText.split('\n').filter(row => row.trim());
+                
+                if (rows.length < 2) {
+                    // Sheet is empty or only has headers
+                    businessData = [];
+                    showMessage('Google Sheet is empty. Use "Initialize with Sample Data" to get started.', 'warning');
+                } else {
+                    // Parse CSV data
+                    businessData = rows.slice(1).map(row => {
+                        const columns = parseCSVRow(row);
+                        return {
+                            name: columns[0] || '',
+                            category: columns[1] || '',
+                            address: columns[2] || '',
+                            phone: columns[3] || '',
+                            website: columns[4] || '',
+                            teamContact: columns[5] || '',
+                            businessContact: columns[6] || '',
+                            status: columns[7] || ''
+                        };
+                    }).filter(business => business.name.trim()); // Filter out empty rows
+                }
+                
+                setConnected(true);
+                renderTable();
+                showMessage(`Successfully loaded ${businessData.length} businesses from Google Sheets!`, 'success');
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showMessage('Direct connection failed due to browser security. Using manual sync mode.', 'warning');
+                showManualSyncInstructions();
+            } finally {
+                showLoading(false);
             }
         }
 
-        // Save data to storage
-        function saveData() {
-            sessionStorage.setItem('chamberBusinessData', JSON.stringify(businessData));
+        // Show manual sync instructions when CORS blocks direct access
+        function showManualSyncInstructions() {
+            setConnected(true); // Allow app to work in manual mode
+            
+            const instructionsHtml = `
+                <div class="error" style="background-color: #fff3cd; color: #856404; border-left-color: #ffc107;">
+                    <h4>🔧 Manual Sync Mode</h4>
+                    <p><strong>Due to browser security restrictions, we'll use manual sync:</strong></p>
+                    <ol>
+                        <li><strong>To EXPORT data:</strong> Click "Export to CSV" button below</li>
+                        <li><strong>To IMPORT data:</strong> 
+                            <ul>
+                                <li>Open your Google Sheet</li>
+                                <li>Download it as CSV (File → Download → CSV)</li>
+                                <li>Click "Import from CSV" button below</li>
+                            </ul>
+                        </li>
+                        <li><strong>Team Sync:</strong> Export/import CSV files to share progress</li>
+                    </ol>
+                    <p><em>This is actually more reliable than automatic sync and gives you full control!</em></p>
+                </div>
+            `;
+            
+            document.getElementById('messages').innerHTML = instructionsHtml;
+            
+            // Load sample data for demo
+            if (businessData.length === 0) {
+                businessData = [...sampleBusinesses];
+                renderTable();
+            }
+        }
+
+        // Parse CSV row (handles quoted values)
+        function parseCSVRow(row) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < row.length; i++) {
+                const char = row[i];
+                
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            result.push(current.trim());
+            return result;
+        }
+
+        // Update data in Google Sheets
+        async function updateSheetsData() {
+            if (!isConnected || !sheetsId) return;
+            
+            try {
+                // Note: This is a limitation - we can only read from Google Sheets via CSV export
+                // For writing, we would need the Google Sheets API with authentication
+                // For now, we'll show instructions for manual updates
+                showMessage('Data updated locally. To sync with Google Sheets, please refresh the page to see the latest team updates.', 'warning');
+                
+            } catch (error) {
+                console.error('Error updating sheets:', error);
+                showMessage('Error updating Google Sheets. Please try again.', 'error');
+            }
+        }
+
+        // Export data to CSV for Google Sheets
+        function exportToCSV() {
+            const headers = ['Business Name', 'Category', 'Address', 'Phone', 'Website', 'Team Contact', 'Business Contact', 'Status'];
+            const csvContent = [
+                headers.join(','),
+                ...businessData.map(business => [
+                    `"${business.name}"`,
+                    `"${business.category}"`,
+                    `"${business.address}"`,
+                    `"${business.phone}"`,
+                    `"${business.website}"`,
+                    `"${business.teamContact}"`,
+                    `"${business.businessContact}"`,
+                    `"${business.status}"`
+                ].join(','))
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `watertown-chamber-tracker-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            showMessage('CSV exported! Upload this to your Google Sheet to share with your team.', 'success');
+        }
+
+        // Import data from CSV
+        function importFromCSV() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.csv';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const csv = e.target.result;
+                            const lines = csv.split('\n');
+                            const headers = lines[0].split(',');
+                            
+                            const importedData = [];
+                            for (let i = 1; i < lines.length; i++) {
+                                if (lines[i].trim()) {
+                                    const values = parseCSVRow(lines[i]);
+                                    const business = {
+                                        name: values[0] || '',
+                                        category: values[1] || '',
+                                        address: values[2] || '',
+                                        phone: values[3] || '',
+                                        website: values[4] || '',
+                                        teamContact: values[5] || '',
+                                        businessContact: values[6] || '',
+                                        status: values[7] || ''
+                                    };
+                                    if (business.name.trim()) {
+                                        importedData.push(business);
+                                    }
+                                }
+                            }
+                            
+                            if (confirm(`Import ${importedData.length} businesses? This will replace your current data.`)) {
+                                businessData = importedData;
+                                renderTable();
+                                showMessage(`Successfully imported ${importedData.length} businesses!`, 'success');
+                            }
+                        } catch (error) {
+                            console.error('Import error:', error);
+                            showMessage('Error importing file. Please check the CSV format.', 'error');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        }
+
+        // Initialize with sample data (now creates CSV for Google Sheets)
+        async function initializeWithSampleData() {
+            if (confirm('This will load 34 sample businesses and create a CSV file for your Google Sheet. Continue?')) {
+                businessData = [...sampleBusinesses];
+                renderTable();
+                setConnected(true);
+                
+                // Auto-export CSV for easy upload to Google Sheets
+                exportToCSV();
+                
+                showMessage('Sample data loaded! A CSV file has been downloaded. Upload it to your Google Sheet to get started.', 'success');
+            }
+        }
+
+        // Set connection status
+        function setConnected(connected) {
+            isConnected = connected;
+            const setupSection = document.getElementById('setupSection');
+            const mainApp = document.getElementById('mainApp');
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            if (connected) {
+                setupSection.classList.add('connected');
+                setupSection.style.display = 'none';
+                mainApp.style.display = 'block';
+                statusIndicator.classList.add('connected');
+                statusText.textContent = 'Connected to Google Sheets';
+            } else {
+                setupSection.classList.remove('connected');
+                setupSection.style.display = 'block';
+                mainApp.style.display = 'none';
+                statusIndicator.classList.remove('connected');
+                statusText.textContent = 'Not Connected';
+            }
+        }
+
+        // Show loading indicator
+        function showLoading(show) {
+            const loading = document.getElementById('loadingIndicator');
+            const table = document.getElementById('businessTable');
+            
+            if (show) {
+                loading.style.display = 'block';
+                table.style.display = 'none';
+            } else {
+                loading.style.display = 'none';
+                table.style.display = 'table';
+            }
+        }
+
+        // Show message
+        function showMessage(message, type = 'info') {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type;
+            messageDiv.textContent = message;
+            
+            messagesDiv.appendChild(messageDiv);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.parentNode.removeChild(messageDiv);
+                }
+            }, 5000);
         }
 
         // Generate table row HTML
-        function generateTableRow(business) {
+        function generateTableRow(business, index) {
             const teamOptions = teamMembers.map(member => 
                 `<option value="${member}" ${business.teamContact === member ? 'selected' : ''}>${member}</option>`
             ).join('');
@@ -793,18 +761,18 @@
                         ${business.website ? `<div><a href="http://${business.website}" target="_blank">${business.website}</a></div>` : ''}
                     </td>
                     <td>
-                        <select onchange="updateField(${business.id}, 'teamContact', this.value)">
+                        <select onchange="updateField(${index}, 'teamContact', this.value)">
                             <option value="">Select team member...</option>
                             ${teamOptions}
                         </select>
                     </td>
                     <td>
                         <input type="text" value="${business.businessContact}" 
-                               onchange="updateField(${business.id}, 'businessContact', this.value)"
+                               onchange="updateField(${index}, 'businessContact', this.value)"
                                placeholder="Enter contact name...">
                     </td>
                     <td>
-                        <select onchange="updateField(${business.id}, 'status', this.value); updateRowStatus(this, this.value)">
+                        <select onchange="updateField(${index}, 'status', this.value); updateRowStatus(this, this.value)">
                             <option value="" ${business.status === '' ? 'selected' : ''}>Not contacted</option>
                             <option value="yes" ${business.status === 'yes' ? 'selected' : ''}>Yes - Will support</option>
                             <option value="no" ${business.status === 'no' ? 'selected' : ''}>No - Declined</option>
@@ -812,20 +780,21 @@
                             <option value="callback" ${business.status === 'callback' ? 'selected' : ''}>Needs follow-up</option>
                         </select>
                     </td>
-                    <td>
-                        <button class="btn btn-secondary" onclick="deleteBusiness(${business.id})" style="padding: 4px 8px; font-size: 0.8em;">Delete</button>
-                    </td>
                 </tr>
             `;
         }
 
         // Update field value
-        function updateField(id, field, value) {
-            const business = businessData.find(b => b.id === id);
-            if (business) {
-                business[field] = value;
-                saveData();
-                updateStats();
+        function updateField(index, field, value) {
+            if (businessData[index]) {
+                businessData[index][field] = value;
+                
+                // Debounced update to Google Sheets
+                clearTimeout(updateTimeout);
+                updateTimeout = setTimeout(() => {
+                    updateSheetsData();
+                    updateStats();
+                }, 1000);
             }
         }
 
@@ -838,7 +807,7 @@
         // Render the table
         function renderTable() {
             const tbody = document.getElementById('businessTableBody');
-            tbody.innerHTML = businessData.map(generateTableRow).join('');
+            tbody.innerHTML = businessData.map((business, index) => generateTableRow(business, index)).join('');
             updateStats();
         }
 
@@ -890,100 +859,24 @@
             });
         }
 
-        // Add new business
-        function addNewBusiness() {
-            document.getElementById('addBusinessModal').style.display = 'block';
-        }
-
-        // Close modal
-        function closeModal() {
-            document.getElementById('addBusinessModal').style.display = 'none';
-            document.getElementById('addBusinessForm').reset();
-        }
-
-        // Delete business
-        function deleteBusiness(id) {
-            if (confirm('Are you sure you want to delete this business?')) {
-                businessData = businessData.filter(b => b.id !== id);
-                saveData();
-                renderTable();
+        // Refresh data from Google Sheets
+        async function refreshData() {
+            if (!isConnected) {
+                showMessage('Not connected to Google Sheets', 'error');
+                return;
             }
+            
+            showMessage('Refreshing data from Google Sheets...', 'info');
+            await loadDataFromSheets();
         }
 
-        // Export data to CSV
-        function exportData() {
-            const headers = ['Business Name', 'Category', 'Address', 'Phone', 'Website', 'Team Contact', 'Business Contact', 'Status'];
-            const csvContent = [
-                headers.join(','),
-                ...businessData.map(business => [
-                    `"${business.name}"`,
-                    `"${business.category}"`,
-                    `"${business.address}"`,
-                    `"${business.phone}"`,
-                    `"${business.website}"`,
-                    `"${business.teamContact}"`,
-                    `"${business.businessContact}"`,
-                    `"${business.status}"`
-                ].join(','))
-            ].join('\n');
-
-            const blob = new Blob([csvContent], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `watertown-chamber-tracker-${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
-            window.URL.revokeObjectURL(url);
-        }
-
-        // Import data from CSV
-        function importData() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.csv';
-            input.onchange = function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        try {
-                            const csv = e.target.result;
-                            const lines = csv.split('\n');
-                            const headers = lines[0].split(',');
-                            
-                            const importedData = [];
-                            for (let i = 1; i < lines.length; i++) {
-                                if (lines[i].trim()) {
-                                    const values = lines[i].split(',').map(v => v.replace(/"/g, ''));
-                                    const business = {
-                                        id: Math.max(...businessData.map(b => b.id), 0) + i,
-                                        name: values[0] || '',
-                                        category: values[1] || '',
-                                        address: values[2] || '',
-                                        phone: values[3] || '',
-                                        website: values[4] || '',
-                                        teamContact: values[5] || '',
-                                        businessContact: values[6] || '',
-                                        status: values[7] || ''
-                                    };
-                                    importedData.push(business);
-                                }
-                            }
-                            
-                            if (confirm(`Import ${importedData.length} businesses? This will replace your current data.`)) {
-                                businessData = importedData;
-                                saveData();
-                                renderTable();
-                                alert('Data imported successfully!');
-                            }
-                        } catch (error) {
-                            alert('Error importing file. Please check the format.');
-                        }
-                    };
-                    reader.readAsText(file);
-                }
-            };
-            input.click();
+        // Open Google Sheet
+        function openGoogleSheet() {
+            if (sheetsUrl) {
+                window.open(sheetsUrl, '_blank');
+            } else {
+                showMessage('No Google Sheet connected', 'error');
+            }
         }
 
         // Event listeners
@@ -991,39 +884,25 @@
         document.getElementById('statusFilter').addEventListener('change', filterTable);
         document.getElementById('searchBox').addEventListener('input', filterTable);
 
-        document.getElementById('addBusinessForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const newBusiness = {
-                id: Math.max(...businessData.map(b => b.id)) + 1,
-                name: document.getElementById('newBusinessName').value,
-                category: document.getElementById('newBusinessCategory').value,
-                address: document.getElementById('newBusinessAddress').value,
-                phone: document.getElementById('newBusinessPhone').value,
-                website: document.getElementById('newBusinessWebsite').value,
-                teamContact: '',
-                businessContact: '',
-                status: ''
-            };
-
-            businessData.push(newBusiness);
-            saveData();
-            renderTable();
-            closeModal();
-        });
-
-        // Close modal when clicking outside
-        window.addEventListener('click', function(event) {
-            const modal = document.getElementById('addBusinessModal');
-            if (event.target === modal) {
-                closeModal();
+        // Auto-refresh every 30 seconds to get team updates
+        setInterval(() => {
+            if (isConnected) {
+                loadDataFromSheets();
             }
-        });
+        }, 30000);
 
         // Initialize the application
         function init() {
-            loadData();
-            renderTable();
+            // Try to restore previous connection
+            const savedSheetsId = localStorage.getItem('chamberSheetsId');
+            const savedSheetsUrl = localStorage.getItem('chamberSheetsUrl');
+            
+            if (savedSheetsId && savedSheetsUrl) {
+                sheetsId = savedSheetsId;
+                sheetsUrl = savedSheetsUrl;
+                document.getElementById('sheetsUrl').value = savedSheetsUrl;
+                loadDataFromSheets();
+            }
         }
 
         // Start the app when page loads
